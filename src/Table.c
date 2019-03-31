@@ -23,6 +23,35 @@ Table_t *new_Table(char *file_name) {
 }
 
 ///
+/// Return the user in table by the given index
+///
+User_t* get_User(Table_t *table, size_t idx) {
+    size_t archived_len;
+    struct stat st;
+    if (!table->cache_map[idx]) {
+        if (idx > INIT_TABLE_SIZE) {
+            goto error;
+        }
+        if (stat(table->file_name, &st) != 0) {
+            goto error;
+        }
+        archived_len = st.st_size / sizeof(User_t);
+        if (idx >= archived_len) {
+            //neither in file, nor in memory
+            goto error;
+        }
+
+        fseek(table->fp, idx*sizeof(User_t), SEEK_SET);
+        fread(table->users+idx, sizeof(User_t), 1, table->fp);
+        table->cache_map[idx] = 1;
+    }
+    return table->users+idx;
+
+error:
+    return NULL;
+}
+
+///
 /// Add the `User_t` data to the given table
 /// If the table is full, it will allocate new space to store more
 /// user data
@@ -33,6 +62,20 @@ int add_User(Table_t *table, User_t *user) {
     if (!table || !user) {
         return 0;
     }
+    
+    //
+    // Primary Key
+    // Implement user.id as the primary key in the Table
+    //
+    size_t curr_idx = 0;
+    User_t* curr_User = get_User(table, curr_idx);
+    while(curr_User){
+        if(curr_User->id == user->id)
+            return 0;
+        curr_idx++;
+        curr_User = get_User(table, curr_idx);
+    }
+    
     if (table->len == table->capacity) {
         User_t *new_user_buf = (User_t*)malloc(sizeof(User_t)*(table->len+EXT_LEN));
         unsigned char *new_cache_buf = (unsigned char *)malloc(sizeof(unsigned char)*(table->len+EXT_LEN));
@@ -124,32 +167,5 @@ int load_table(Table_t *table, char *file_name) {
     return table->len;
 }
 
-///
-/// Return the user in table by the given index
-///
-User_t* get_User(Table_t *table, size_t idx) {
-    size_t archived_len;
-    struct stat st;
-    if (!table->cache_map[idx]) {
-        if (idx > INIT_TABLE_SIZE) {
-            goto error;
-        }
-        if (stat(table->file_name, &st) != 0) {
-            goto error;
-        }
-        archived_len = st.st_size / sizeof(User_t);
-        if (idx >= archived_len) {
-            //neither in file, nor in memory
-            goto error;
-        }
 
-        fseek(table->fp, idx*sizeof(User_t), SEEK_SET);
-        fread(table->users+idx, sizeof(User_t), 1, table->fp);
-        table->cache_map[idx] = 1;
-    }
-    return table->users+idx;
-
-error:
-    return NULL;
-}
 
