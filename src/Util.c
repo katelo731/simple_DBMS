@@ -127,9 +127,22 @@ int handle_insert_cmd(Table_t *table, Command_t *cmd) {
 ///
 int handle_select_cmd(Table_t *table, Command_t *cmd) {
     size_t idx;
-    for (idx = 0; idx < table->len; idx++) {
-        print_user(get_User(table, idx));
+    if(!cmd->args[1]){
+        for (idx = 0; idx < table->len; idx++) {
+            print_user(get_User(table, idx));
+        }
+    } else{
+        //
+        // Limit argument
+	// Implement limit argument to restrict 
+        // the number of output
+        //
+        int show_num = atoi(cmd->args[2]);
+        for (idx = 0; idx < show_num; idx++) {
+            print_user(get_User(table, idx));
+        }
     }
+
     cmd->type = SELECT_CMD;
     return table->len;
 }
