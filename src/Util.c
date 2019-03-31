@@ -35,6 +35,32 @@ void print_user(User_t *user) {
     printf("(%d, %s, %s, %d)\n", user->id, user->name, user->email, user->age);
 }
 
+//
+// function for task 4
+//
+void print_user_proj(Command_t *cmd, User_t *user) {
+    int cmd_ptr = 1;
+
+    while(strncmp(cmd->args[cmd_ptr], "from", 4)){
+        if(!strncmp(cmd->args[cmd_ptr], "*", 1)){
+            printf("(%d, %s, %s, %d)\n", user->id, user->name, user->email, user->age);
+            return;
+        }
+        if(cmd_ptr == 1) printf("(");
+        else printf(", ");
+        if(!strncmp(cmd->args[cmd_ptr], "id", 2))
+            printf("%d", user->id);
+        else if(!strncmp(cmd->args[cmd_ptr], "name", 4))
+            printf("%s", user->name);
+        else if(!strncmp(cmd->args[cmd_ptr], "email", 5))
+            printf("%s", user->email);
+        else if(!strncmp(cmd->args[cmd_ptr], "age", 3))
+            printf("%d", user->age);
+        cmd_ptr += 1;
+    }
+    printf(")\n");
+}
+
 ///
 /// This function received an output argument
 /// Return: category of the command
@@ -151,8 +177,16 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
         for (idx = offset; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
+    } else {
+        //
+        // Projection (field selection)
+	// Implement projection(field selection) 
+        // in select query
+        //
+        for (idx = 0; idx < table->len; idx++) {
+            print_user_proj(cmd, get_User(table, idx));
+        }
     }
-
     cmd->type = SELECT_CMD;
     return table->len;
 }
