@@ -131,7 +131,7 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
         for (idx = 0; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
-    } else{
+    } else if(!strncmp(cmd->args[1], "limit", 5)){
         //
         // Limit argument
 	// Implement limit argument to restrict 
@@ -139,6 +139,16 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
         //
         int show_num = atoi(cmd->args[2]);
         for (idx = 0; idx < show_num; idx++) {
+            print_user(get_User(table, idx));
+        }
+    } else if(!strncmp(cmd->args[1], "offset", 6)){
+        //
+        // Offset argument
+	// Implement offset argument to add offset
+	// for the query result
+        //
+        int offset = atoi(cmd->args[2]);
+        for (idx = offset; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
     }
