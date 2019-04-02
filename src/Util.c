@@ -153,31 +153,40 @@ int handle_insert_cmd(Table_t *table, Command_t *cmd) {
 ///
 int handle_select_cmd(Table_t *table, Command_t *cmd) {
     size_t idx;
+    if(table->len == 0){
+        return 0;
+    }
     if(!cmd->args[1]){
         for (idx = 0; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
+        cmd->type = SELECT_CMD;
+        return table->len; 
     } else if(!strncmp(cmd->args[1], "limit", 5)){
         //
         // Limit argument
 	// Implement limit argument to restrict 
         // the number of output
         //
-        int show_num = atoi(cmd->args[2]);
+        size_t show_num = atoi(cmd->args[2]);
         for (idx = 0; idx < show_num; idx++) {
             print_user(get_User(table, idx));
         }
+        cmd->type = SELECT_CMD;
+        return show_num;
     } else if(!strncmp(cmd->args[1], "offset", 6)){
         //
         // Offset argument
 	// Implement offset argument to add offset
 	// for the query result
         //
-        int offset = atoi(cmd->args[2]);
+        size_t offset = atoi(cmd->args[2]);
         for (idx = offset; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
-    } else {
+        cmd->type = SELECT_CMD;
+        return (table->len - offset);
+    } else{
         //
         // Projection (field selection)
 	// Implement projection(field selection) 
@@ -186,9 +195,9 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
         for (idx = 0; idx < table->len; idx++) {
             print_user_proj(cmd, get_User(table, idx));
         }
+        cmd->type = SELECT_CMD;
+        return table->len;
     }
-    cmd->type = SELECT_CMD;
-    return table->len;
 }
 
 ///
