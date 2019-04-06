@@ -156,7 +156,7 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
     if(table->len == 0){
         return 0;
     }
-    if(!cmd->args[1]){
+    if(cmd->args_len == 1){
         for (idx = 0; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
@@ -168,35 +168,44 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
 	// Implement limit argument to restrict 
         // the number of output
         //
+	if(!cmd->args[2]) return 0;
         size_t show_num = atoi(cmd->args[2]);
-        for (idx = 0; idx < show_num; idx++) {
+        for (idx = 0; idx < show_num && idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
         cmd->type = SELECT_CMD;
-        return show_num;
+        return (show_num < table->len? show_num : table->len);
     } else if(!strncmp(cmd->args[1], "offset", 6)){
         //
         // Offset argument
 	// Implement offset argument to add offset
 	// for the query result
         //
+	if(!cmd->args[2]) return 0;
         size_t offset = atoi(cmd->args[2]);
         for (idx = offset; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
         cmd->type = SELECT_CMD;
-        return (table->len - offset);
-    } else{
+        return ((table->len - offset) < 0? 0 : (table->len - offset));
+    } else if((!strncmp(cmd->args[1], "id", 2)) 
+	      || (!strncmp(cmd->args[1], "name", 4))
+	      || (!strncmp(cmd->args[1], "email", 5))
+	      || (!strncmp(cmd->args[1], "age", 3))
+	      || (!strncmp(cmd->args[1], "*", 1))){
         //
         // Projection (field selection)
 	// Implement projection(field selection) 
         // in select query
-        //
+        // 	
         for (idx = 0; idx < table->len; idx++) {
             print_user_proj(cmd, get_User(table, idx));
         }
         cmd->type = SELECT_CMD;
         return table->len;
+    } else {
+	//cmd->type = SELECT_CMD;
+        return 0;
     }
 }
 
