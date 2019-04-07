@@ -77,20 +77,20 @@ int add_User(Table_t *table, User_t *user) {
     }
     
     if (table->len == table->capacity) {
-        User_t *new_user_buf = (User_t*)malloc(sizeof(User_t)*(table->len+EXT_LEN));
-        unsigned char *new_cache_buf = (unsigned char *)malloc(sizeof(unsigned char)*(table->len+EXT_LEN));
+        User_t *new_user_buf = (User_t*)malloc(sizeof(User_t)*(table->len+EXT_LEN+1));
+        unsigned char *new_cache_buf = (unsigned char *)malloc(sizeof(unsigned char)*(table->len+EXT_LEN+1));
 
+	memset(new_user_buf, 0, sizeof(User_t)*table->len+EXT_LEN+1);
         memcpy(new_user_buf, table->users, sizeof(User_t)*table->len);
-
-        memset(new_cache_buf, 0, sizeof(unsigned char)*(table->len+EXT_LEN));
+        memset(new_cache_buf, 0, sizeof(unsigned char)*(table->len+EXT_LEN+1));
         memcpy(new_cache_buf, table->cache_map, sizeof(unsigned char)*table->len);
-
 
         free(table->users);
         free(table->cache_map);
-        table->users = new_user_buf;
+
+        table->capacity += (size_t)EXT_LEN;
+	table->users = new_user_buf;
         table->cache_map = new_cache_buf;
-        table->capacity += EXT_LEN;
     }
     idx = table->len;
     memcpy((table->users)+idx, user, sizeof(User_t));

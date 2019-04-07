@@ -40,7 +40,6 @@ void print_user(User_t *user) {
 //
 void print_user_proj(Command_t *cmd, User_t *user) {
     int cmd_ptr = 1;
-
     while(strncmp(cmd->args[cmd_ptr], "from", 4)){
         if(!strncmp(cmd->args[cmd_ptr], "*", 1)){
             printf("(%d, %s, %s, %d)\n", user->id, user->name, user->email, user->age);
@@ -153,16 +152,25 @@ int handle_insert_cmd(Table_t *table, Command_t *cmd) {
 ///
 int handle_select_cmd(Table_t *table, Command_t *cmd) {
     size_t idx;
+    int offset_flag = 0;
+    int offset_num = 0;
+    int limit_flag = 0;
+    int limit_num = 0;
+
+    // empty table
     if(table->len == 0){
         return 0;
     }
+    // 'select'
     if(cmd->args_len == 1){
         for (idx = 0; idx < table->len; idx++) {
             print_user(get_User(table, idx));
         }
         cmd->type = SELECT_CMD;
         return table->len; 
-    } else if(!strncmp(cmd->args[1], "limit", 5)){
+    }
+    // 'select limit <limit_num>' 
+    else if(!strncmp(cmd->args[1], "limit", 5)){
         //
         // Limit argument
 	// Implement limit argument to restrict 
@@ -175,7 +183,9 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
         }
         cmd->type = SELECT_CMD;
         return (show_num < table->len? show_num : table->len);
-    } else if(!strncmp(cmd->args[1], "offset", 6)){
+    } 
+    // 'select offset <offset_num>'
+    else if(!strncmp(cmd->args[1], "offset", 6)){
         //
         // Offset argument
 	// Implement offset argument to add offset
@@ -188,7 +198,9 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
         }
         cmd->type = SELECT_CMD;
         return ((table->len - offset) < 0? 0 : (table->len - offset));
-    } else if((!strncmp(cmd->args[1], "id", 2)) 
+    }
+    // 'select */id/name/email/age from <table_name> [offset <offset_num>] [limit <limit_num>]' 
+    else if((!strncmp(cmd->args[1], "id", 2)) 
 	      || (!strncmp(cmd->args[1], "name", 4))
 	      || (!strncmp(cmd->args[1], "email", 5))
 	      || (!strncmp(cmd->args[1], "age", 3))
@@ -198,13 +210,60 @@ int handle_select_cmd(Table_t *table, Command_t *cmd) {
 	// Implement projection(field selection) 
         // in select query
         // 	
-        for (idx = 0; idx < table->len; idx++) {
-            print_user_proj(cmd, get_User(table, idx));
+
+        // offset detection
+        if(cmd->args_len >= 5){
+	    if(!strncmp(cmd->args[cmd->args_len-4], "offset", 6)){
+	        offset_flag = 1;
+	        offset_num = atoi(cmd->args[cmd->args_len-3]);
+	    } else if(!strncmp(cmd->args[cmd->args_len-2], "offset", 6)){
+	        offset_flag = 1;
+	        offset_num = atoi(cmd->args[cmd->args_len-1]);
+	    }
+        } else if(cmd->args_len >= 3){
+	    if(!strncmp(cmd->args[cmd->args_len-2], "offset", 6)){
+	        offset_flag = 1;
+	        offset_num = atoi(cmd->args[cmd->args_len-1]);
+	    }
         }
+
+        // limit detection
+        if(cmd->args_len >= 5){
+	    if(!strncmp(cmd->args[cmd->args_len-4], "limit", 5)){
+	        limit_flag = 1;
+	        limit_num = atoi(cmd->args[cmd->args_len-3]);
+	    } else if(!strncmp(cmd->args[cmd->args_len-2], "limit", 5)){
+	        limit_flag = 1;
+	        limit_num = atoi(cmd->args[cmd->args_len-1]);
+	    }
+        } else if(cmd->args_len >= 3){
+	    if(!strncmp(cmd->args[cmd->args_len-2], "limit", 5)){
+	        limit_flag = 1;
+	        limit_num = atoi(cmd->args[cmd->args_len-1]);
+	    }
+        }
+
+	int c = 0;
+        for (idx = 0; idx < table->len; idx++) {
+	    if(offset_flag && offset_num > 0){
+	        offset_num --;
+  	        continue;
+	    }
+	    if(limit_flag && limit_num > 0){
+		limit_num --;
+		print_user_proj(cmd, get_User(table, idx));
+		c++;
+	    } else if(!limit_flag){
+            	print_user_proj(cmd, get_User(table, idx));
+		c++;
+	    }
+        }
+
         cmd->type = SELECT_CMD;
-        return table->len;
-    } else {
-	//cmd->type = SELECT_CMD;
+        return c;
+    }
+    // 'select <invalid_instr>' 
+    else {
         return 0;
     }
 }
